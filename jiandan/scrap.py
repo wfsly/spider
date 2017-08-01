@@ -10,7 +10,10 @@ from lxml import html
 
 
 def download_img(url, img_name):
-    urllib.urlretrieve(url, img_name)
+    try:
+        urllib.urlretrieve(url, img_name)
+    except IOError:
+        print url
 
 
 start_time = time.time()
@@ -45,10 +48,12 @@ else:
 
 total_page = int(home_page.xpath('//span[@class="current-comment-page"]')[0].text[1:-1])
 
+total_page = 40
 pages = range(1, total_page + 1)
 pages.reverse()
 
 count = 0
+begin = time.time()
 for number in pages:
     res = req.get(PAGE_URL.format(number=number))
     page = html.fromstring(res.text)
@@ -65,13 +70,17 @@ for number in pages:
                 continue
         split_url = url.split('.')
         if split_url[-1] == 'gif':
-            url = 'http://' + li[i].xpath('.//p[1]/a[1]')[0].get('href')
-        image_name = 'images/' + li[i].xpath('.//span[@class="righttext"]/a')[-1].text + '.' + split_url[-1]
+            url = li[i].xpath('.//p[1]/a[1]')[0].get('href')
+            if 'http:' not in url:
+                url = 'http:' + url
+        image_name = 'temp/' + li[i].xpath('.//span[@class="righttext"]/a')[-1].text + '.' + split_url[-1]
         count += 1
         if not os.path.isfile(image_name):
             print 'downloading {0} page No.{1} {2}'.format(number, count, image_name)
-            try:
-                download_img(url, image_name)
-            except IOError:
-                print 'Error downloading {0} page No.{1} {2}'.format(number, count, url)
-                continue
+            download_img(url, image_name)
+            # try:
+            #     download_img(url, image_name)
+            # except IOError:
+            #     print 'Error downloading {0} page No.{1} {2}'.format(number, count, url)
+            #     continue
+print 'All down in ', time.time() - begin
