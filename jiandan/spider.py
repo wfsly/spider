@@ -25,7 +25,7 @@ def show_time(func):
 
 class JianDan(object):
     PROJECT_NAME = 'jiandan'
-    IMAGE_DIR = os.path.join(settings.IMAGE_DIR, PROJECT_NAME + '/')
+    IMAGE_DIR = settings.IMAGE_DIR
     HOME_PAGE_URL = 'http://jiandan.net/ooxx/'
     CONTENT_PAGE_URL_TEMPLATE = HOME_PAGE_URL + 'page-{number}#comments'
     HEADERS = {
@@ -67,7 +67,6 @@ class JianDan(object):
             urllib.urlretrieve(url, img_name)
         except IOError:
             print url
-            pass
 
     def parse_imge(self, process, page_number):
         try:
@@ -92,13 +91,14 @@ class JianDan(object):
                 try:
                     url = li[i].xpath('.//p[1]/a[1]')[0].get('href')
                 except:
+                    print 'gif url error'
                     continue
                 if 'http:' not in url:
                     url = 'http:' + url
             image_name = self.IMAGE_DIR + 'process-{0}-{1}-{2}-'.format(process, page_number, count) + li[i].xpath('.//span[@class="righttext"]/a')[-1].text + '.' + split_url[-1]
             count += 1
             if not os.path.isfile(image_name):
-                # print 'Process {0} downloading {1} page No.{2} {3}'.format(process, page_number, count, image_name[-21:])
+                print 'Process {0} downloading {1} page No.{2} {3}'.format(process, page_number, count, image_name[-21:])
                 # sys.stdout.flush()
                 self.download_img(url, image_name)
                 # try:
@@ -111,6 +111,11 @@ class JianDan(object):
     def start(self, process, start_page, end_page):
         begin = time.time()
         for number in range(start_page, end_page):
+            self.parse_imge(process, number)
+        print 'Process-{} Done'.format(process), time.time() - begin
+
+    @show_time
+    def multi_thread_start(self, process, start_page, end_page):
             self.parse_imge(process, number)
         print 'Process-{} Done'.format(process), time.time() - begin
 

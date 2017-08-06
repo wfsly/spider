@@ -48,14 +48,17 @@ else:
 
 total_page = int(home_page.xpath('//span[@class="current-comment-page"]')[0].text[1:-1])
 
-total_page = 40
+# total_page = 40
 pages = range(1, total_page + 1)
 pages.reverse()
 
 count = 0
 begin = time.time()
 for number in pages:
-    res = req.get(PAGE_URL.format(number=number))
+    try:
+        res = req.get(PAGE_URL.format(number=number))
+    except:
+        continue
     page = html.fromstring(res.text)
 
     li = page.xpath('//ol[@class="commentlist"]/li')
@@ -70,13 +73,16 @@ for number in pages:
                 continue
         split_url = url.split('.')
         if split_url[-1] == 'gif':
-            url = li[i].xpath('.//p[1]/a[1]')[0].get('href')
+            try:
+                url = li[i].xpath('.//p[1]/a[1]')[0].get('href')
+            except:
+                continue
             if 'http:' not in url:
                 url = 'http:' + url
-        image_name = 'temp/' + li[i].xpath('.//span[@class="righttext"]/a')[-1].text + '.' + split_url[-1]
+        image_name = 'temp/{0}-{1}-'.format(number, count) + li[i].xpath('.//span[@class="righttext"]/a')[-1].text + '.' + split_url[-1]
         count += 1
         if not os.path.isfile(image_name):
-            print 'downloading {0} page No.{1} {2}'.format(number, count, image_name)
+            # print 'downloading {0} page No.{1} {2}'.format(number, count, image_name)
             download_img(url, image_name)
             # try:
             #     download_img(url, image_name)
