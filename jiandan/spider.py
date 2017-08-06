@@ -1,8 +1,11 @@
 # encoding: utf-8
 
-from multiprocessing import Pool, Process
 import os
+import threading
 import urllib
+
+from multiprocessing import Pool, Process
+from threading import Thread
 
 import requests
 from lxml import html
@@ -19,7 +22,10 @@ def show_time(func):
         print 'Cost: {}'.format(end - start)
     return wrapper
 
+
 class JianDan(object):
+    PROJECT_NAME = 'jiandan'
+    IMAGE_DIR = os.path.join(settings.IMAGE_DIR, PROJECT_NAME + '/')
     HOME_PAGE_URL = 'http://jiandan.net/ooxx/'
     CONTENT_PAGE_URL_TEMPLATE = HOME_PAGE_URL + 'page-{number}#comments'
     HEADERS = {
@@ -46,9 +52,8 @@ class JianDan(object):
             print 'Login jiandan succeed'
 
     def _check_images_dir(self):
-        if not os.path.exists(settings.IMAGE_DIR):
-            os.makedirs(settings.IMAGE_DIR)
-        self.image_dir = settings.IMAGE_DIR
+        if not os.path.exists(self.IMAGE_DIR):
+            os.makedirs(self.IMAGE_DIR)
 
     def _get_total_page_number(self):
         self.total_page_number = int(self.home_page.xpath(self.PAGE_NUMBER_XPATH)[0].text[1:-1])
@@ -90,7 +95,7 @@ class JianDan(object):
                     continue
                 if 'http:' not in url:
                     url = 'http:' + url
-            image_name = self.image_dir + 'process-{0}-{1}-{2}-'.format(process, page_number, count) + li[i].xpath('.//span[@class="righttext"]/a')[-1].text + '.' + split_url[-1]
+            image_name = self.IMAGE_DIR + 'process-{0}-{1}-{2}-'.format(process, page_number, count) + li[i].xpath('.//span[@class="righttext"]/a')[-1].text + '.' + split_url[-1]
             count += 1
             if not os.path.isfile(image_name):
                 # print 'Process {0} downloading {1} page No.{2} {3}'.format(process, page_number, count, image_name[-21:])
@@ -110,6 +115,9 @@ class JianDan(object):
         print 'Process-{} Done'.format(process), time.time() - begin
 
     def multiprocess_run(self):
+        """
+        多进程入口
+        """
         self.process = []
         process_number = 0
         total_page_number = self.total_page_number
@@ -123,6 +131,27 @@ class JianDan(object):
             self.process.append(p)
         for i in self.process:
             i.join()
+
+
+    def multithread_run(self):
+        """
+        多线程入口
+        """
+        thread_number = 0
+        total_page_number = self.total_page_number
+        each_process = self.each_process
+        for i in range(1, total_page_number + 1, each_process):
+            thread_number += 1
+            p = Thread(target=self.start, args=(thread_number, i, i + each_process, ))
+            p.start()
+            print '{} start'.format(thread_number)
+            time.sleep(3)
+
+        main_thread = threading.currentThread()
+        for t in threading.enumerate():
+            if t is main_thread:
+                continue
+            t.join()
 
     def run(self):
         for number in self.pages:
@@ -159,5 +188,6 @@ if __name__ == "__main__":
     from datetime import datetime
     begin = time.time()
     print 'start at: ', datetime.fromtimestamp(time.time())
-    JianDan().multiprocess_run()
+    # JianDan().multiprocess_run()
+    JianDan().multithread_run()
     print 'All down in ', time.time() - begin
