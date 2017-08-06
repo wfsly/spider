@@ -10,6 +10,8 @@ PARENT_DIR = os.path.abspath('../')
 
 IMAGE_DIR = os.path.join(ROOT_DIR, 'images/')
 
+PROCESS_NUMBER = 4
+
 # === NEVER PUT MORE SETTINGS AFTER HERE ===
 settings_local = os.path.join(ROOT_DIR, "settings_local.py")
 if os.path.exists(settings_local):
